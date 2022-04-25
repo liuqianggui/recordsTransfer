@@ -1,0 +1,24 @@
+path:
+#  要执行的shell脚本的Linux绝对路径
+  shellpath: /app/audiotest/shell
+#  要迁移的目录
+  tomovepath: /app/audiotest/avaya-wfor
+#  迁移目标目录
+  targetpath: /audio
+#  厂商
+  company: avaya-wfor
+#  要迁移的文件格式(测试使用的是tar文件)
+  file: tar
+async:
+  executor:
+    thread:
+      # 配置核心线程数
+      core_pool_size: 10
+      # 配置最大线程数
+      max_pool_size: 20
+      # 配置队列大小
+      queue_capacity: 999
+      name:
+        prefix: async-service-
+server:
+  port: 18081
