@@ -75,7 +75,7 @@ public class MasterThread implements ApplicationRunner {
 
         String txtpath = call.callScript(shellTouchMark, tomovepath, shellpath);
         //String txtpath = "C:\\Users\\liuqianggui\\Desktop\\move\\20220422.txt";
-
+        String test="测试提交权限";
 
         /**生产者-->通过处理目录文件获取到需要处理的子文件
          */
