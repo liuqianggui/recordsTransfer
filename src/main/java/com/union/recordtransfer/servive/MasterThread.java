@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Queue;
 import java.util.concurrent.*;
 
@@ -118,7 +120,18 @@ public class MasterThread implements ApplicationRunner {
                         return;
                     }
                     log.info("[{}][队列数据消费]当前队列数量:[{}]，正在处理...",Thread.currentThread().getName(),queue.size());
-                    String Cmd=filewaitingdeal+" "+tailffix+" "+tomovepath+" "+company;
+//                    脚本执行参数改变 1 要迁移的路径 2 company 3 迁移的路径 4 要写出的TXT的路径 5 要迁移的目标路径 6 要迁移的文件格式
+//                  构建时间参数
+                    SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+                    Date datee = new Date(System.currentTimeMillis());
+                    String date=formatter.format(datee);
+//                  构建要执行的格式file
+                    String[] strArr= tailffix.split(",");
+                    StringBuffer file = new StringBuffer();
+                    for(int i = 0;i < strArr.length;i++){
+                        file.append(strArr[i] + " ");
+                    }
+                    String Cmd=filewaitingdeal+" "+company+" "+tomovepath+" "+date+""+targetpath+" "+file;
                     log.info("[{}][队列数据消费]，执行shell:[{}]",Thread.currentThread().getName(),Cmd);
                     call.callScript(shellProduceMd5, Cmd, shellpath);
                 }
