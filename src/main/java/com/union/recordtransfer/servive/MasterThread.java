@@ -44,6 +44,7 @@ public class MasterThread implements ApplicationRunner {
 
     public Queue queue=new ArrayBlockingQueue(10000);
 
+
     /**
      *
      * 【完成录音文件迁移及MD5文件的生成】
