@@ -22,3 +22,13 @@ async:
         prefix: async-service-
 server:
   port: 18081
+logging:
+  config: classpath:logback-spring.xml
+  file:
+    #日志路径
+    path: ./log
+  level:
+    com:
+      #日志级别
+      union: debug
+

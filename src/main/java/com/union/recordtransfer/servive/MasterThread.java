@@ -69,78 +69,84 @@ public class MasterThread implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
 
-        //执行第一个脚本遍历目录
-        String shellTouchMark = shellpath + "/touchmark.sh";
-        String shellProduceMd5 = shellpath + "/produceMD5.sh";
+        String[] split = tomovepath.split(",");
+        for (String s : split) {
+            String singleTomovepath = s.trim();
 
-        log.info("shell命令:{}", shellTouchMark);
-        CallShell call = new CallShell();
+            //执行第一个脚本遍历目录
+            String shellTouchMark = shellpath + "/touchmark.sh";
+            String shellProduceMd5 = shellpath + "/produceMD5.sh";
 
-        String txtpath = call.callScript(shellTouchMark, tomovepath, shellpath);
-        //String txtpath = "C:\\Users\\liuqianggui\\Desktop\\move\\20220422.txt";
-        String test="测试提交权限";
+            log.info("shell命令:{}", shellTouchMark);
+            CallShell call = new CallShell();
 
-        /**生产者-->通过处理目录文件获取到需要处理的子文件
-         */
+            String txtpath = call.callScript(shellTouchMark, singleTomovepath, shellpath);
+            //String txtpath = "C:\\Users\\liuqianggui\\Desktop\\move\\20220422.txt";
+            String test="测试提交权限";
 
-        new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    ReadTxtQueue queueTenplete = new ReadTxtQueue();
-                    while (queue.size()>9000){
-                        log.info("[{}][队列数据生产]当前队列数量大于9000:[{}]，程序正在休眠...",Thread.currentThread().getName(),queue.size());
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
+            /**生产者-->通过处理目录文件获取到需要处理的子文件
+             */
+
+            new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ReadTxtQueue queueTenplete = new ReadTxtQueue();
+                        while (queue.size()>9000){
+                            log.info("[{}][队列数据生产]当前队列数量大于9000:[{}]，程序正在休眠...",Thread.currentThread().getName(),queue.size());
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
+                        queueTenplete.readTxt(txtpath, queue);
                     }
-                    queueTenplete.readTxt(txtpath, queue);
-                }
-            }).start();
-        /**
-         * 消费者-->
-         * 1)从队列中获取String数据（每一条字符串都是一个文件的文件名）
-         * 2）对上一步获取的文件做解析获取文件中的每一行数据（每一行都是一个录音文件的路径）
-         * 3） 生成MD5值
-         */
-        while(true){
-          while(queue.size()>0){
-              threadPoolExecutor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    /**
-                     * 此处为将以下几个参数传递给<produceMd5.sh>脚本
-                     * 1） 本次需要处理的文件目录
-                     * 2） 要处理的文件类型，如"tar"
-                     * 3)  要迁移的路径
-                     * 4） 要迁移的路径第二层级目录
-                     */
-                    String filewaitingdeal = (String) queue.poll();
-                    if(!StringUtils.hasText(filewaitingdeal)||filewaitingdeal==null){
-                        return;
+                }).start();
+            /**
+             * 消费者-->
+             * 1)从队列中获取String数据（每一条字符串都是一个文件的文件名）
+             * 2）对上一步获取的文件做解析获取文件中的每一行数据（每一行都是一个录音文件的路径）
+             * 3） 生成MD5值
+             */
+            while(true){
+              while(queue.size()>0){
+                  threadPoolExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        /**
+                         * 此处为将以下几个参数传递给<produceMd5.sh>脚本
+                         * 1） 本次需要处理的文件目录
+                         * 2） 要处理的文件类型，如"tar"
+                         * 3)  要迁移的路径
+                         * 4） 要迁移的路径第二层级目录
+                         */
+                        String filewaitingdeal = (String) queue.poll();
+                        if(!StringUtils.hasText(filewaitingdeal)||filewaitingdeal==null){
+                            return;
+                        }
+                        log.info("[{}][队列数据消费]当前队列数量:[{}]，正在处理...",Thread.currentThread().getName(),queue.size());
+    //                    脚本执行参数改变 1 要迁移的路径 2 company 3 迁移的路径 4 要写出的TXT的路径 5 要迁移的目标路径 6 要迁移的文件格式
+    //                  构建时间参数
+                        SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+                        Date datee = new Date(System.currentTimeMillis());
+                        String date=formatter.format(datee);
+    //                  构建要执行的格式file
+                        String[] strArr= tailffix.split(",");
+                        StringBuffer file = new StringBuffer();
+                        for(int i = 0;i < strArr.length;i++){
+                            file.append(strArr[i] + " ");
+                        }
+                        String Cmd=filewaitingdeal+" "+company+" "+singleTomovepath+" "+date+""+targetpath+" "+file;
+                        log.info("[{}][队列数据消费]，执行shell:[{}]",Thread.currentThread().getName(),Cmd);
+                        call.callScript(shellProduceMd5, Cmd, shellpath);
                     }
-                    log.info("[{}][队列数据消费]当前队列数量:[{}]，正在处理...",Thread.currentThread().getName(),queue.size());
-//                    脚本执行参数改变 1 要迁移的路径 2 company 3 迁移的路径 4 要写出的TXT的路径 5 要迁移的目标路径 6 要迁移的文件格式
-//                  构建时间参数
-                    SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
-                    Date datee = new Date(System.currentTimeMillis());
-                    String date=formatter.format(datee);
-//                  构建要执行的格式file
-                    String[] strArr= tailffix.split(",");
-                    StringBuffer file = new StringBuffer();
-                    for(int i = 0;i < strArr.length;i++){
-                        file.append(strArr[i] + " ");
-                    }
-                    String Cmd=filewaitingdeal+" "+company+" "+tomovepath+" "+date+""+targetpath+" "+file;
-                    log.info("[{}][队列数据消费]，执行shell:[{}]",Thread.currentThread().getName(),Cmd);
-                    call.callScript(shellProduceMd5, Cmd, shellpath);
-                }
-            });
-          }
-        }
+                });
+              }
+            }
 
         }
+        log.info("程序执行完成。");
+    }
     }
 
 
